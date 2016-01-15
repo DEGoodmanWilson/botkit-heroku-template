@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/botkit-heroku-template.git"
+    "url": "git+https://github.com/DEGoodmanWilson/turnkey-botkit.git"
   },
   "keywords": [
     "slack",
@@ -18,9 +18,9 @@
   "author": "D.E. Goodman-Wilson",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/botkit-heroku/issues"
+    "url": "https://github.com/DEGoodmanWilson/turnkey-botkit/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/botkit-heroku#readme",
+  "homepage": "https://github.com/DEGoodmanWilson/turnkey-botkit#readme",
   "engines": {
     "node": "5.1.1"
   },
