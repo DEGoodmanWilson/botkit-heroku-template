@@ -1,5 +1,5 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "brandstats",
   "version": "1.0.0",
   "description": "The awesomest bot evar.",
   "main": "index.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "https://github.com/huber2jb/easy-peasy-bot"
   },
   "keywords": [
     "slack",
