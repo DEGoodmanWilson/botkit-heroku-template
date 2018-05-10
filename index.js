@@ -89,8 +89,8 @@ controller.hears('hello', 'direct_message', function (bot, message) {
     bot.reply(message, 'Hello!');
 });
 
-controller.hears(‘letters’, ‘direct_mention’, ‘direct_message’, function (bot, message) {
-    bot.reply(message, "Letters should for sure go cat skiing with you guys. Otherwise he’s a baby-back-bitch!");
+controller.hears('letters', 'direct_mention', function (bot, message) {
+    bot.reply(message, 'Letters should for sure go cat skiing with you guys. Otherwise he’s a baby-back-bitch!');
 });
 
 /**
