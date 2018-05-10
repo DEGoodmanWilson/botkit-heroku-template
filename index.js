@@ -86,9 +86,12 @@ controller.on('bot_channel_join', function (bot, message) {
 });
 
 controller.hears('hello', 'direct_message', function (bot, message) {
-    bot.reply(message, 'Hello!');
+    bot.reply(message, 'you suck');
 });
 
+controller.hears('letters', 'direct_message', function (bot, message) {
+    bot.reply(message, 'Letters should for sure go cat skiing with you guys, otherwise he’s a baby-back-bitch!');
+});
 
 /**
  * AN example of what could be:
