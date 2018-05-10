@@ -89,7 +89,7 @@ controller.hears('hello', 'direct_message', function (bot, message) {
     bot.reply(message, 'Hello!');
 });
 
-controller.hears('letters', 'direct_mention', function (bot, message) {
+controller.hears('letters', 'direct_message,direct_mention,mention', function (bot, message) {
     bot.reply(message, 'Letters should for sure go cat skiing with you guys. Otherwise he’s a baby-back-bitch!');
 });
 
