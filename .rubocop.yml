@@ -1,0 +1,46 @@
+AllCops:
+  TargetRubyVersion: 2.3
+  DisplayCopNames: true
+  DisplayStyleGuide: false
+  Exclude:
+    - 'vendor/**/*'
+    - 'db/*'
+    - 'db/fixtures/**/*'
+Bundler/OrderedGems:
+  Enabled: false
+Lint/ShadowingOuterLocalVariable:
+  Enabled: false
+Lint/AmbiguousOperator:
+  Enabled: false
+Ling/DeprecatedClassMethods:
+  Enabled: false
+Lint/StringConversionInInterpolation:
+  Enabled: false
+Lint/EndAlignment:
+  Enabled: true
+Lint/EndInMethod:
+  Enabled: true
+Lint/NestedMethodDefinition:
+  Enabled: true
+Lint/NextWithoutAccumulator:
+  Enabled: true
+Lint/ParenthesesAsGroupedExpression:
+  Enabled: true
+Lint/RequireParentheses:
+  Enabled: true
+Lint/RescueException:
+  Enabled: false
+Lint/UnneededDisable:
+  Enabled: false
+Lint/UnreachableCode:
+  Enabled: false
+Lint/UnusedBlockArgument:
+  Enabled: false
+Lint/UnusedMethodArgument:
+  Enabled: false
+Lint/UselessAccessModifier:
+  Enabled: false
+Lint/Loop:
+  Enabled: false
+Lint/UselessAssignment:
+  Enabled: false
