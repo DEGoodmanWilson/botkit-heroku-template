@@ -1,0 +1,54 @@
+########### START Common CI ###########
+image: ruby:2.3.1
+stages:
+  - setup
+  - test
+  - deploy
+
+services:
+  - postgres:latest
+  - redis:latest
+
+variables:
+  DATABASE_URL: 'postgres://root@postgres/test_db'
+  POSTGRES_DB: test_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: root
+########### END Common CI ###########
+
+########### START Stage Setup ###########
+setup:
+  stage: setup
+  allow_failure: true
+  script:
+    - apt-get update -qy
+    - apt-get install -y nodejs
+    - bundle install --path /cache
+    - bundle exec rake db:create RAILS_ENV=test
+    - bundle exec rake db:migrate RAILS_ENV=test
+    - bundle exec rake test
+########### END Stage Setup ###########
+
+########### START Stage Testing ###########
+rubocop-testing:
+  stage: test
+  allow_failure: true
+  script:
+    - gem install rubocop
+    - rubocop --lint
+
+security-testing:
+  stage: test
+  allow_failure: true
+  script:
+    - gem install brakeman
+    - brakeman
+
+rspec-testing:
+  stage: test
+  allow_failure: true
+  script:
+    - gem install rspec
+    - rspec
+########### END Stage Testing ###########
+
