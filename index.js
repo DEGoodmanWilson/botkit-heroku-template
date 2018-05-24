@@ -5,12 +5,16 @@ const rp = require('request-promise');
 const Ticket = require('./models/Ticket');
 var ticketList = {};
 var userIdOnCall = undefined;
+var oldDate;
+var curDate;
 /**
  * Define a function for initiating a conversation on installation
  * With custom integrations, we don't have a way to find out who installed us, so we can't message them :(
  */
 
 function onInstallation(bot, installer) {
+  controller.trigger("testing trigger", [bot, message]);
+
   if (installer) {
     bot.startPrivateConversation({user: installer}, function (err, convo) {
       if (err) {
@@ -18,6 +22,42 @@ function onInstallation(bot, installer) {
       } else {
         convo.say("I'm the P0 bot! I'm here to automatically notify the oncall developer of any new P0s and send reminders to update the ticket until resolved.");
         convo.say("Most of my functions will handle automatically, however some commands rely on human interaction so /invite me to a channel to use them!");
+
+        oldDate = new Date();
+        oldDate = oldDate.toISOString();
+        oldDate = oldDate.substr(0, 18) + oldDate.substr(22,23);
+
+        setInterval(function(){
+          curDate = new Date()
+          curdate = curDate.toISOString();
+          curDate = curDate.substr(0, 18) + curDate.substr(22,23);
+
+          options.PZeroCheck.since = oldDate;
+          options.PZeroCheck.until = curDate;
+
+          request(options.PZeroCheck, function(err, res, body){
+            body = body.incidents;
+
+            if(body == []){
+              return;
+            } else {
+              for(var i = 0; i < body.length; i++){
+                if(body.impacted_services.summary == "Connect P0 Escalation")
+                  controller.trigger("p0 open", [bot, body.incident_number]);
+              }
+            }
+
+            oldDate = curDate;
+
+            for(var i = 0; i < ticketList.length; i++){
+              request({url: 'https://api.pagerduty.com/incidents', json: true}, function(err, res, body){
+                if(body.incidents.status == "resolved")
+                  controller.trigger("p0 close", [bot, body.incident_number]);
+              });
+            }
+          });
+                
+        }, 1000*60);
       }
     });
   }
@@ -63,15 +103,17 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
  */
 // BEGIN EDITING HERE!
 
+
 controller.on('bot_channel_join', function (bot, message) {
   bot.reply(message, "The P0 bot has arrived!");
+  controller.trigger("testing trigger", [bot, message]);
 });
 
 // The big kahuna. This guy may be dirty af, but he gets the job done
-controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
-  messageText = message.text.split(' ');
+controller.on("p0 open", function(bot, ticketNumber){
+  //messageText = message.text.split(' ');
 
-  var ticketNumber = messageText[2];
+  //var ticketNumber = messageText[2];
 
   rp(options.slackUsers).then(function(slackUsers){
     var users = slackUsers.members;
@@ -89,15 +131,15 @@ controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], fun
       body = body.oncalls;
 
       var userName = body[2].user.summary;
-      userIdOnCall = /*userList[userName]*/ 'UATBQNHML';
+      userIdOnCall = userList[userName];
 
-      bot.reply(message, userName + ' is on call');
+      //bot.reply(message, userName + ' is on call');
 
-      if(userIdOnCall == undefined){
-        bot.reply(message, "It appears that the person on call hasn't set their real name in slack so I" 
-          + " was unable to DM them about the P0 situation.");
-        return;
-      }
+      //if(userIdOnCall == undefined){
+        //bot.reply(message, "It appears that the person on call hasn't set their real name in slack so I" 
+          //+ " was unable to DM them about the P0 situation.");
+        //return;
+      //}
 
       bot.startPrivateConversation({user: userIdOnCall}, function(err, convo){
          if(err){
@@ -116,25 +158,25 @@ controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], fun
   });
 });
 
-controller.hears("p0 close", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
-  messageText = message.text.split(' ');
+controller.hears("p0 close", function(bot, ticketNumber){
+  //messageText = message.text.split(' ');
 
-  if(messageText.length != 3){
-    bot.reply(message, "Invalid format. It looks like you're trying to close a p0 ticket. The command is 'p0 close <ticket number>");
-    return;
-  }
+  //if(messageText.length != 3){
+    //bot.reply(message, "Invalid format. It looks like you're trying to close a p0 ticket. The command is 'p0 close <ticket number>");
+    //return;
+  //}
 
-  if(ticketList[messageText[2]] == undefined){
-    bot.reply(message, "You did not enter a valid ticketID");
-    return;
-  }
+  //if(ticketList[messageText[2]] == undefined){
+    //bot.reply(message, "You did not enter a valid ticketID");
+    //return;
+  //}
 
-  var temp = ticketList[messageText[2]];
-  var ticketNumber = messageText[2];
+  var temp = ticketList[ticketNumber];
+  //var ticketNumber = messageText[2];
   temp.notificationEnd();
   delete ticketList[messageText[2]];
 
-  bot.reply(message, "Ticket number " + ticketNumber + " has been successfully deleted! Great hustle family. One less p0 to worry about.");
+  //bot.reply(message, "Ticket number " + ticketNumber + " has been successfully deleted! Great hustle family. One less p0 to worry about.");
 });
 
 controller.hears("p0 time", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
@@ -172,7 +214,7 @@ controller.hears("p0 time", ['direct_mention', 'mention', 'direct_message'], fun
 
     convo.say("The interval was updated for ticket number" + ticketNumber + " so you may need to update it.")
   });
-}
+});
 
 controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], function(bot, message){
   request(options.escalation, (err, res, body) => {
@@ -184,4 +226,11 @@ controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], 
 
   bot.reply(message, "Escalation 1: " + escalation1 + "\nEscalation 2: " + escalation2 + "\nEscalation 3: " + escalation3);
   })
+})
+
+
+controller.on("testing trigger", function(bot, message){
+  bot.startPrivateConversation({user: 'UATBQNHML'}, function(err, convo){
+    convo.say("This has been a succesfful trigger fam");
+  });
 })
