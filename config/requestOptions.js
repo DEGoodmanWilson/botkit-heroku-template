@@ -1,7 +1,7 @@
 const keys = require('./keys');
 
 module.exports = {
-  onCall: {
+  on_call: {
     url: "https://api.pagerduty.com/oncalls?time_zone=UTC&escalation_policy_ids%5B%5D=P67HF4O",
     json: true,
     headers: {
@@ -19,7 +19,7 @@ module.exports = {
     }
   },
 
-  slackUsers: {
+  slack_users: {
     uri: "https://slack.com/api/users.list",
     json: true,
     qs: {
@@ -27,7 +27,7 @@ module.exports = {
     }
   },
 
-  PZeroCheck: {
+  p_zero_check: {
     url: 'https://api.pagerduty.com/incidents?team_ids%5B%5D=PT10OFI&statuses%5B%5D=triggered&statuses%5B%5D=acknowledged',
     json: true,
     qs: {
