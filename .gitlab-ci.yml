@@ -1,0 +1,67 @@
+########### START Common CI ###########
+image: ruby:2.3.1
+stages:
+  - setup
+  - test
+  - deploy
+
+services:
+  - postgres:latest
+  - redis:latest
+
+variables:
+  DATABASE_URL: 'postgres://root@postgres/test_db'
+  POSTGRES_DB: test_db
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: root
+########### END Common CI ###########
+
+########### START Stage Setup ###########
+setup:
+  stage: setup
+  allow_failure: true
+  script:
+    - apt-get update -qy
+    - apt-get install -y nodejs
+    - bundle install --path /cache
+    - bundle exec rake db:create RAILS_ENV=test
+    - bundle exec rake db:migrate RAILS_ENV=test
+    - bundle exec rake test
+########### END Stage Setup ###########
+
+########### START Stage Testing ###########
+rubocop-testing:
+  stage: test
+  allow_failure: true
+  script:
+    - gem install rubocop
+    - rubocop --lint
+
+security-testing:
+  stage: test
+  allow_failure: true
+  script:
+    - gem install brakeman
+    - brakeman
+
+rspec-testing:
+  stage: test
+  allow_failure: true
+  script:
+    - gem install rspec
+    - rspec
+########### END Stage Testing ###########
+
+########### START staging-deploy-us-west-2 ###########
+staging-us-deploy:
+  stage: deploy
+  environment:
+    name: Staging US
+    url: https://pager-duty-slackbot-staging.apps.zuora.com
+  script:
+    - gem install dpl
+    - dpl --provider=deis --controller=https://deis.apps.zuora.com --username=$DEIS_USERNAME_US_STAGING --password=$DEIS_PASSWORD_US_STAGING --app=pager-duty-slackbot-staging --cli-version=v2.13.0
+    - ./deis run rake db:migrate -a pager-duty-slackbot-staging
+  only:
+    - staging
+########### END staging-deploy-us-west-2 ###########
