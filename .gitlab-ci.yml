@@ -1,3 +1,9 @@
+########### START Common CI ###########
+image: ruby:2.3.1
+stages:
+ - setup
+ - test
+ - deploy
 ########### END Stage Testing ###########
 
 ########### START staging-deploy-us-west-2 ###########
