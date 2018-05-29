@@ -5,10 +5,12 @@ const request = require('request');
 const rp = require('request-promise');
 const Ticket = require('./models/Ticket');
 var ticket_list = {};
+var user_list = {};
 var user_id_on_call = undefined;
 var main_interval_id = -1;
 var old_date;
 var cur_date;
+var escalation_level = 1;
 
 /**
  * Define a function for initiating a conversation on installation
@@ -85,43 +87,57 @@ function botReboot(){
     cur_date = cur_date.toISOString();
     cur_date = cur_date.substr(0, 18) + cur_date.substr(22,23);
 
+    // old_date = old_date.replace(":", "%3A");
+    // cur_date = cur_date.replace(":", "%3A");
+    // old_date = old_date.replace(":", "%3A");
+    // cur_date = cur_date.replace(":", "%3A");
+
     options.p_zero_check.since = old_date;
     options.p_zero_check.until = cur_date;
 
+    console.log("SINCE: " + options.p_zero_check.since);
+    console.log("UNTIL: " + options.p_zero_check.until);
+
     request(options.p_zero_check, function(err, res, body){
       body = body.incidents;
+      console.log(body);
 
       if(body == []){
         return;
       } else {
         for(var i = 0; i < body.length; i++){
-          if(body.impacted_services.summary == "Connect P0 Escalation")
-            controller.trigger("p0 open", [bot, body.incident_number]);
+          for(var j = 0; j < body[i].impacted_services.length; j++){
+            if(body[i].impacted_services[j].summary == "Connect P0 Escalation")
+              controller.trigger("p0 open", [bot, body.incident_number]);
+          }
         }
       }
 
       old_date = cur_date;
 
-      for(var i = 0; i < ticket_list.length; i++){
-        request({url: 'https://api.pagerduty.com/incidents', json: true}, function(err, res, body){
+      for(var ticket_number in ticket_list){
+        request({url: 'https://api.pagerduty.com/incidents/' + ticket_number, json: true}, function(err, res, body){
           if(body.incidents.status == "resolved")
             controller.trigger("p0 close", [bot, body.incident_number]);
         });
       }
     });
           
-  }, 1000*60);
+  }, 10000);
 }
 
 controller.on('bot_channel_join', function (bot, message) {
   bot.reply(message, "This is the P0lice! Put your hands where I can see them! :male-police-officer: :rotating_light: :female-police-officer:");
+  //botReboot();
 });
 
 // The big kahuna. This guy may be dirty af, but he gets the job done
-controller.on("p0 open", function(bot, ticket_number){
+controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], function(bot, /*ticket_number*/ message){
+  ticket_number = message.text.split(' ')[2];
+
   rp(options.slack_users).then(function(slack_users){
     var users = slack_users.members;
-    var user_list = {};
+    user_list = {};
 
     for(var i = 0; i < users.length; i++){
       user_list[users[i].real_name] = users[i].id;
@@ -135,7 +151,8 @@ controller.on("p0 open", function(bot, ticket_number){
       body = body.oncalls;
 
       var user_name = body[2].user.summary;
-      user_id_on_call = user_list[user_name];
+      user_id_on_call = /*user_list[user_name]*/ 'UATBQNHML';
+      bot.reply(message, "Ticket number" + ticket_number + " has been opened")
 
       bot.startPrivateConversation({user: user_id_on_call}, function(err, convo){
         if(err){
@@ -154,7 +171,8 @@ controller.on("p0 open", function(bot, ticket_number){
   });
 });
 
-controller.on("p0 close", function(bot, ticket_number){
+controller.hears("p0 close", ['direct_mention', 'mention', 'direct_message'], function(bot, /*ticket_number*/ message){
+  ticket_number = '123';
   var temp = ticket_list[ticket_number];
   clearInterval(temp.interval_id);
 
@@ -233,7 +251,7 @@ controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], 
     var escalation2 = body[1].user.summary;
     var escalation3 = body[0].user.summary;
 
-  bot.reply(message, "Escalation 1: " + escalation1 + "\nEscalation 2: " + escalation2 + "\nEscalation 3: " + escalation3);
+    bot.reply(message, "Escalation 1: " + escalation1 + "\nEscalation 2: " + escalation2 + "\nEscalation 3: " + escalation3);
   })
 });
 
@@ -244,3 +262,36 @@ controller.hears("stop reminders", ['direct_mention', 'mention', 'direct_message
 controller.hears("reboot", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
   botReboot();
 });
+
+controller.hears("", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+  console.log(message);
+});
+
+controller.hears("escalate", ["direct_mention", "mention", "direct_message"], function(bot, message){
+  message_text = message.text.split(' ');
+
+  if(message_text.length != 2){
+    bot.reply(message, "Bad format. Please enter 'escalation <ticket number>'.");
+    return;
+  }
+  
+  if(escalation_level == 3){
+    bot.reply(message, "We are already at the highest esclation");
+    return;
+  }
+
+  escalation_level++;
+
+  ticket = ticket_list[message_text[1]];
+
+  if(ticket == undefined){
+    bot.reply(message, "Invalid ticket number");
+    return;
+  }
+
+  request(options.escalation, (err, res, body) => {
+    var newOnCall = body[3 - escalation_level].user.summary; 
+
+    ticket.user_id = user_list[newOnCall];
+  })
+})
