@@ -7,10 +7,6 @@ const Ticket = require('./models/Ticket');
 var ticket_list = {};
 var user_list = {};
 var user_id_on_call = undefined;
-var main_interval_id = -1;
-var old_date;
-var cur_date;
-var escalation_level = 1;
 
 /**
  * Define a function for initiating a conversation on installation
@@ -23,7 +19,7 @@ function onInstallation(bot, installer) {
       if (err) {
         console.log(err);
       } else {
-        convo.say("I'm the P0 bot! I'm here to automatically notify the on_call developer of any new P0s and send reminders to update the ticket until resolved.");
+        convo.say("I'm the P0 bot! I'm here to automatically notify the on call developer of any new P0s and send reminders to update the ticket until resolved.");
         convo.say("Most of my functions will handle automatically, however some commands rely on human interaction so /invite me to a channel to use them!");
       }
     });
@@ -71,70 +67,109 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
  * Core bot logic goes here!
  */
 // BEGIN EDITING HERE!
+
+// Resets the globals in event of catastrophic failure
 function botReboot(){
-  if(main_interval_id != -1)
-    clearInterval(main_interval_id);
-
   ticket_list = {};
+  user_list = {};
   user_id_on_call = undefined;
-
-  old_date = new Date();
-  old_date = old_date.toISOString();
-  old_date = old_date.substr(0, 18) + old_date.substr(22,23);
-
-  main_interval_id = setInterval(function(){
-    cur_date = new Date()
-    cur_date = cur_date.toISOString();
-    cur_date = cur_date.substr(0, 18) + cur_date.substr(22,23);
-
-    // old_date = old_date.replace(":", "%3A");
-    // cur_date = cur_date.replace(":", "%3A");
-    // old_date = old_date.replace(":", "%3A");
-    // cur_date = cur_date.replace(":", "%3A");
-
-    options.p_zero_check.since = old_date;
-    options.p_zero_check.until = cur_date;
-
-    console.log("SINCE: " + options.p_zero_check.since);
-    console.log("UNTIL: " + options.p_zero_check.until);
-
-    request(options.p_zero_check, function(err, res, body){
-      body = body.incidents;
-      console.log(body);
-
-      if(body == []){
-        return;
-      } else {
-        for(var i = 0; i < body.length; i++){
-          for(var j = 0; j < body[i].impacted_services.length; j++){
-            if(body[i].impacted_services[j].summary == "Connect P0 Escalation")
-              controller.trigger("p0 open", [bot, body.incident_number]);
-          }
-        }
-      }
-
-      old_date = cur_date;
-
-      for(var ticket_number in ticket_list){
-        request({url: 'https://api.pagerduty.com/incidents/' + ticket_number, json: true}, function(err, res, body){
-          if(body.incidents.status == "resolved")
-            controller.trigger("p0 close", [bot, body.incident_number]);
-        });
-      }
-    });
-          
-  }, 10000);
 }
 
 controller.on('bot_channel_join', function (bot, message) {
   bot.reply(message, "This is the P0lice! Put your hands where I can see them! :male-police-officer: :rotating_light: :female-police-officer:");
-  //botReboot();
 });
 
-// The big kahuna. This guy may be dirty af, but he gets the job done
-controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], function(bot, /*ticket_number*/ message){
-  ticket_number = message.text.split(' ')[2];
+// Escalates a specified ticket up one level if possible
+controller.on("escalate", function(bot, ticket_number){
+  ticket = ticket_list[ticket_number];
 
+  if(ticket == undefined){
+    bot.reply(message, "Invalid ticket number");
+    return;
+  }
+
+  if(ticket.escalation_level == 3){
+    bot.reply(message, "We are already at the highest esclation");
+    return;
+  }
+
+  escalation_level++;
+
+  request(options.escalation, (err, res, body) => {
+    var newOnCall = body[3 - escalation_level].user.summary; 
+
+    ticket.user_id = user_list[newOnCall];
+  })
+});
+
+// Lists the devs escalation levels
+controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+  request(options.escalation, (err, res, body) => {
+    body = body.oncalls;
+  
+    var escalation1 = body[2].user.summary;
+    var escalation2 = body[1].user.summary;
+    var escalation3 = body[0].user.summary;
+
+    bot.reply(message, "*Escalation 1*: " + escalation1 + "\n*Escalation 2*: " + escalation2 + "\n*Escalation 3*: " + escalation3);
+  })
+});
+
+// Provides a list of commands the bot can handle
+controller.hears("help", ["direct_mention", "mention", "direct_message"], function(bot, message){
+  bot.reply(message, "*escalation* - Print the list of users on escalation");
+  bot.reply(message, "*escalate <ticket number>* - Escalate the specified ticket to the next level");
+  bot.reply(message, "*help* - Show this list of commands\n");
+  bot.reply(message, "*p0 time <ticket number> <time number> <time unit>* - Change the reminder intervals for the specified ticket to the specified time"); 
+  bot.reply(message, "*reboot* - The bot will reset and all memory of currently open tickets is erased");
+  bot.reply(message, "*stop reminders <ticket number>* - Stop receiving reminders for the specified ticket"); 
+});
+
+controller.on("message_received", function(bot, message){
+  console.log(message);
+
+  if(message.subtitle != undefined){
+    var subtitle = message.subtitle.split(' ');
+    if(subtitle[0] == "PagerDuty"){
+      var content = message.content.split(' ');
+      if(content[0] == "Triggered"){
+        var ticket_number = content[1].replace(":", "");
+        controller.trigger("p0 open", [bot, ticket_number]);
+      }
+      
+      else if(content[0] == "Escalated"){
+        var ticket_number = content[1].replace(":", "");
+        controller.trigger("escalate", [bot, ticket_number]);
+      }
+
+      else if(content[0] == "Resolved"){
+        var ticket_number = content[1].replace(":", "");
+        controller.trigger("p0 close", [bot, ticket_number]);
+      }
+    }
+  }
+});
+
+// Closes a ticket
+controller.on("p0 close", function(bot, ticket_number){
+  var temp = ticket_list[ticket_number];
+  clearInterval(temp.interval_id);
+
+  bot.startPrivateConversation({user: temp.user_id}, function(err, convo){
+    if(err){
+      console.log(err);
+    }
+
+    dm = messages.close[Math.floor(Math.random() * 4) + 1];
+
+    convo.say(dm);
+  });
+
+  delete ticket_list[ticket_number];
+});
+
+// Opens a new ticket
+controller.on("p0 open", function(bot, ticket_number){
   rp(options.slack_users).then(function(slack_users){
     var users = slack_users.members;
     user_list = {};
@@ -152,8 +187,6 @@ controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], fun
 
       var user_name = body[2].user.summary;
       user_id_on_call = /*user_list[user_name]*/ 'UATBQNHML';
-      bot.reply(message, "Ticket number" + ticket_number + " has been opened")
-
       bot.startPrivateConversation({user: user_id_on_call}, function(err, convo){
         if(err){
           console.log(err);
@@ -171,41 +204,7 @@ controller.hears("p0 open", ['direct_mention', 'mention', 'direct_message'], fun
   });
 });
 
-controller.hears("p0 close", ['direct_mention', 'mention', 'direct_message'], function(bot, /*ticket_number*/ message){
-  ticket_number = '123';
-  var temp = ticket_list[ticket_number];
-  clearInterval(temp.interval_id);
-
-  bot.startPrivateConversation({user: temp.user_id}, function(err, convo){
-    if(err){
-      console.log(err);
-    }
-
-    dm = messages.close[Math.floor(Math.random() * 4) + 1];
-
-    convo.say(dm);
-  });
-
-  delete ticket_list[ticket_number];
-});
-
-controller.on("set reminder", function(bot, ticket, time_number, time_unit){
-  if(ticket.interval_id != -1)
-    clearInterval(ticket.interval_id);
-
-  var time = (time_unit == 'minute' || time_unit == 'minutes') ? 1000*60*time_number : 1000*60*60*time_number;
-
-  ticket.interval_id = setInterval(function(){
-    bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
-      if(err){
-        console.log(err);
-      }
-
-      convo.say("This is a reminder to update ticket number " + ticket.number);
-    })
-  }, time);
-})
-
+// Changes the reminder intervals for a ticket to the specified time
 controller.hears("p0 time", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
   message_text = message.text.split(' ');
 
@@ -243,55 +242,31 @@ controller.hears("p0 time", ['direct_mention', 'mention', 'direct_message'], fun
   });
 });
 
-controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], function(bot, message){
-  request(options.escalation, (err, res, body) => {
-    body = body.oncalls;
-  
-    var escalation1 = body[2].user.summary;
-    var escalation2 = body[1].user.summary;
-    var escalation3 = body[0].user.summary;
-
-    bot.reply(message, "Escalation 1: " + escalation1 + "\nEscalation 2: " + escalation2 + "\nEscalation 3: " + escalation3);
-  })
+// Reboots the bot in the event of total meltdown
+controller.hears("reboot", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+  botReboot();
+  bot.reply(message, "My memory has been wiped. I forgot about all tickets I was tracking and reminders I was giving");
 });
 
+// Called by p0 time and p0 open to change the reminder intervals
+controller.on("set reminder", function(bot, ticket, time_number, time_unit){
+  if(ticket.interval_id != -1)
+    clearInterval(ticket.interval_id);
+
+  var time = (time_unit == 'minute' || time_unit == 'minutes') ? 1000*60*time_number : 1000*60*60*time_number;
+
+  ticket.interval_id = setInterval(function(){
+    bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
+      if(err){
+        console.log(err);
+      }
+
+      convo.say("This is a reminder to update ticket number " + ticket.number);
+    })
+  }, time);
+})
+
+// Stops the reminders for a specified ticket
 controller.hears("stop reminders", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
   message_text = message.split(' ');
 });
-
-controller.hears("reboot", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
-  botReboot();
-});
-
-controller.hears("", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
-  console.log(message);
-});
-
-controller.hears("escalate", ["direct_mention", "mention", "direct_message"], function(bot, message){
-  message_text = message.text.split(' ');
-
-  if(message_text.length != 2){
-    bot.reply(message, "Bad format. Please enter 'escalation <ticket number>'.");
-    return;
-  }
-  
-  if(escalation_level == 3){
-    bot.reply(message, "We are already at the highest esclation");
-    return;
-  }
-
-  escalation_level++;
-
-  ticket = ticket_list[message_text[1]];
-
-  if(ticket == undefined){
-    bot.reply(message, "Invalid ticket number");
-    return;
-  }
-
-  request(options.escalation, (err, res, body) => {
-    var newOnCall = body[3 - escalation_level].user.summary; 
-
-    ticket.user_id = user_list[newOnCall];
-  })
-})
