@@ -1,10 +1,10 @@
 {
   "name": "myawesomebot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "A bot that will notify on call developers when P0 tickets open, escalate and resolve and sends reminders on an interval",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "CLIENT_ID=${CLIENT_ID} CLIENT_SECRET=${CLIENT_SECRET} PORT=${PORT} SLACK_TOKEN=${SLACK_TOKEN} PAGER_DUTY_TOKEN=${PAGER_DUTY_TOKEN} node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

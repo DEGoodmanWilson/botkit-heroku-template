@@ -83,13 +83,8 @@ controller.on('bot_channel_join', function (bot, message) {
 controller.on("escalate", function(bot, ticket_number){
   ticket = ticket_list[ticket_number];
 
-  if(ticket == undefined){
-    bot.reply(message, "Invalid ticket number");
-    return;
-  }
-
   if(ticket.escalation_level == 3){
-    bot.reply(message, "We are already at the highest esclation");
+    console.log("Already at the highest escalation level");
     return;
   }
 
@@ -99,6 +94,14 @@ controller.on("escalate", function(bot, ticket_number){
     var newOnCall = body[3 - escalation_level].user.summary; 
 
     ticket.user_id = user_list[newOnCall];
+
+    bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
+      if(err){
+        console.log(err);
+      }
+
+      convo.say("Ticket number " + ticket.number + " has been escalated and you are the next developer on call!");
+    });
   })
 });
 
@@ -118,16 +121,17 @@ controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], 
 // Provides a list of commands the bot can handle
 controller.hears("help", ["direct_mention", "mention", "direct_message"], function(bot, message){
   bot.reply(message, "*escalation* - Print the list of users on escalation");
-  bot.reply(message, "*escalate <ticket number>* - Escalate the specified ticket to the next level");
   bot.reply(message, "*help* - Show this list of commands\n");
   bot.reply(message, "*p0 time <ticket number> <time number> <time unit>* - Change the reminder intervals for the specified ticket to the specified time"); 
   bot.reply(message, "*reboot* - The bot will reset and all memory of currently open tickets is erased");
   bot.reply(message, "*stop reminders <ticket number>* - Stop receiving reminders for the specified ticket"); 
 });
 
-controller.on("message_received", function(bot, message){
-  console.log(message);
+controller.hears(["hi", "hello", "howdy", "whats up", "what's up", "hey", "aloha"], ["direct_mention", "mention", "direct_message"], function(bot, message){
+  bot.reply(message, ":holdup: hello civilian :holdup:");
+});
 
+controller.on("message_received", function(bot, message){
   if(message.subtitle != undefined){
     var subtitle = message.subtitle.split(' ');
     if(subtitle[0] == "PagerDuty"){
@@ -163,6 +167,7 @@ controller.on("p0 close", function(bot, ticket_number){
     dm = messages.close[Math.floor(Math.random() * 4) + 1];
 
     convo.say(dm);
+    convo.say("P0 Ticket Number " + ticket_number + " has been resolved! I will quit pestering you about updating trusts now :)")
   });
 
   delete ticket_list[ticket_number];
@@ -186,15 +191,16 @@ controller.on("p0 open", function(bot, ticket_number){
       body = body.oncalls;
 
       var user_name = body[2].user.summary;
-      user_id_on_call = /*user_list[user_name]*/ 'UATBQNHML';
+      user_id_on_call = user_list[user_name];
       bot.startPrivateConversation({user: user_id_on_call}, function(err, convo){
         if(err){
           console.log(err);
         }
 
-        dm = messages.open[Math.floor(Math.random() * 5) + 1];
+        dm = messages.open[Math.floor(Math.random() * 4) + 1];
       
         convo.say(dm);
+        convo.say("P0 Ticket Number " + ticket_number + " has been opened! You will be sent reminders to update trusts every hour or a custom time interval if you specify otherwise")
       });
 
        ticket_list[ticket_number] = new Ticket(ticket_number, user_id_on_call);

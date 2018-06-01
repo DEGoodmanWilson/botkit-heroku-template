@@ -5,7 +5,7 @@ module.exports = {
     url: "https://api.pagerduty.com/oncalls?time_zone=UTC&escalation_policy_ids%5B%5D=P67HF4O",
     json: true,
     headers: {
-      Authorization: keys.PagerDutyAuth,
+      Authorization: process.env.PAGER_DUTY_TOKEN,
       Accept: "application/vnd.pagerduty+json;version=2"
     }
   },
@@ -14,7 +14,7 @@ module.exports = {
     url: "https://api.pagerduty.com/oncalls?time_zone=UTC&escalation_policy_ids%5B%5D=P67HF4O",
     json: true,
     headers: {
-      Authorization: keys.PagerDutyAuth,
+      Authorization: process.env.PAGER_DUTY_TOKEN,
       Accept: "application/vnd.pagerduty+json;version=2"
     }
   },
@@ -23,7 +23,7 @@ module.exports = {
     uri: "https://slack.com/api/users.list",
     json: true,
     qs: {
-      token: keys.SlackToken
+      token: process.env.SLACK_TOKEN
     }
   },
 
@@ -40,7 +40,7 @@ module.exports = {
       time_zone: 'UTC'
     },
     headers: {
-      Authorization: keys.PagerDutyAuth
+      Authorization: process.env.PAGER_DUTY_TOKEN
     }
   }
 }
