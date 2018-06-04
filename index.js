@@ -106,7 +106,7 @@ controller.on("escalate", function(bot, ticket_number){
 });
 
 // Lists the devs escalation levels
-controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+controller.hears('escalation', ['direct_mention', 'direct_message'], function(bot, message){
   request(options.escalation, (err, res, body) => {
     body = body.oncalls;
   
@@ -119,7 +119,7 @@ controller.hears('escalation', ['direct_mention', 'mention', 'direct_message'], 
 });
 
 // Provides a list of commands the bot can handle
-controller.hears("help", ["direct_mention", "mention", "direct_message"], function(bot, message){
+controller.hears("help", ["direct_mention", "direct_message"], function(bot, message){
   bot.reply(message, "*escalation* - Print the list of users on escalation");
   bot.reply(message, "*help* - Show this list of commands\n");
   bot.reply(message, "*p0 time <ticket number> <time number> <time unit>* - Change the reminder intervals for the specified ticket to the specified time"); 
@@ -127,7 +127,7 @@ controller.hears("help", ["direct_mention", "mention", "direct_message"], functi
   bot.reply(message, "*stop reminders <ticket number>* - Stop receiving reminders for the specified ticket"); 
 });
 
-controller.hears(["hi", "hello", "howdy", "whats up", "what's up", "hey", "aloha"], ["direct_mention", "mention", "direct_message"], function(bot, message){
+controller.hears(["hi", "hello", "howdy", "whats up", "what's up", "hey", "aloha"], ["direct_mention", "direct_message"], function(bot, message){
   bot.reply(message, ":holdup: hello civilian :holdup:");
 });
 
@@ -211,7 +211,7 @@ controller.on("p0 open", function(bot, ticket_number){
 });
 
 // Changes the reminder intervals for a ticket to the specified time
-controller.hears("p0 time", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+controller.hears("p0 time", ['direct_mention', 'direct_message'], function(bot, message){
   message_text = message.text.split(' ');
 
   if(message_text.length != 5){
@@ -249,7 +249,7 @@ controller.hears("p0 time", ['direct_mention', 'mention', 'direct_message'], fun
 });
 
 // Reboots the bot in the event of total meltdown
-controller.hears("reboot", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+controller.hears("reboot", ['direct_mention', 'direct_message'], function(bot, message){
   botReboot();
   bot.reply(message, "My memory has been wiped. I forgot about all tickets I was tracking and reminders I was giving");
 });
@@ -273,6 +273,6 @@ controller.on("set reminder", function(bot, ticket, time_number, time_unit){
 })
 
 // Stops the reminders for a specified ticket
-controller.hears("stop reminders", ['direct_mention', 'mention', 'direct_message'], function(bot, message){
+controller.hears("stop reminders", ['direct_mention', 'direct_message'], function(bot, message){
   message_text = message.split(' ');
 });
