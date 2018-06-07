@@ -1,5 +1,3 @@
-const keys = require('./keys');
-
 module.exports = {
   on_call: {
     url: "https://api.pagerduty.com/oncalls?time_zone=UTC&escalation_policy_ids%5B%5D=P67HF4O",
