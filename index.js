@@ -25,7 +25,9 @@ function onInstallation(bot, installer) {
     });
   }
 
-  botReboot();
+  ticket_list = {};
+  user_list = {};
+  user_id_on_call = undefined;
 }
 
 /**
@@ -67,13 +69,6 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
  * Core bot logic goes here!
  */
 // BEGIN EDITING HERE!
-
-// Resets the globals in event of catastrophic failure
-function botReboot(){
-  ticket_list = {};
-  user_list = {};
-  user_id_on_call = undefined;
-}
 
 controller.on('bot_channel_join', function (bot, message) {
   bot.reply(message, "This is the P0lice! Put your hands where I can see them! :male-police-officer: :rotating_light: :female-police-officer:");
@@ -123,7 +118,7 @@ controller.hears("help", ["direct_mention", "direct_message"], function(bot, mes
   bot.reply(message, "*escalation* - Print the list of users on escalation");
   bot.reply(message, "*help* - Show this list of commands\n");
   bot.reply(message, "*p0 time <ticket number> <time number> <time unit>* - Change the reminder intervals for the specified ticket to the specified time"); 
-  bot.reply(message, "*reboot* - The bot will reset and all memory of currently open tickets is erased");
+  bot.reply(message, "*tickets* - List all the currently open tickets");
   bot.reply(message, "*stop reminders <ticket number>* - Stop receiving reminders for the specified ticket"); 
 });
 
@@ -131,10 +126,24 @@ controller.hears(["hi", "hello", "howdy", "whats up", "what's up", "hey", "aloha
   bot.reply(message, ":holdup: hello civilian :holdup:");
 });
 
+controller.hears("tickets", ["direct_mention", "direct_message"], function(bot, message){
+  if(ticket_list.length == 0){
+    bot.reply(message, "There are currently no open tickets that I'm aware of");
+  } else {
+    var response = ticket_list[0];
+    for(var i = 1; i < ticket_list.length; i++){
+      response = response + "\n" + ticket_list[i];
+    }
+
+    bot.reply(message, response);
+  }
+})
+
 controller.on("message_received", function(bot, message){
   if(message.subtitle != undefined){
     var subtitle = message.subtitle.split(' ');
     if(subtitle[0] == "PagerDuty"){
+      console.log(message);
       var content = message.content.split(' ');
       if(content[0] == "Triggered"){
         var ticket_number = content[1].replace(":", "");
@@ -246,12 +255,6 @@ controller.hears("p0 time", ['direct_mention', 'direct_message'], function(bot, 
 
     convo.say("The reminder interval was updated to" + time_number + " " + time_unit + " for ticket number " + ticket_number + " so you may need to update the ticket.")
   });
-});
-
-// Reboots the bot in the event of total meltdown
-controller.hears("reboot", ['direct_mention', 'direct_message'], function(bot, message){
-  botReboot();
-  bot.reply(message, "My memory has been wiped. I forgot about all tickets I was tracking and reminders I was giving");
 });
 
 // Called by p0 time and p0 open to change the reminder intervals
