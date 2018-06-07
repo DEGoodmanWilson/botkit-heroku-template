@@ -126,17 +126,19 @@ controller.hears(["hi", "hello", "howdy", "whats up", "what's up", "hey", "aloha
 });
 
 controller.hears("tickets", ["direct_mention", "direct_message"], function(bot, message){
-  if(ticket_list.length == 0){
+  ticket_array = Object.keys(ticket_list);
+
+  if(ticket_array.length == 0){
     bot.reply(message, "There are currently no open tickets that I'm aware of");
   } else {
-    var response = ticket_list[0];
-    for(var i = 1; i < ticket_list.length; i++){
-      response = response + "\n" + ticket_list[i];
+    var response = ticket_array[0];
+    for(var i = 1; i < ticket_array.length; i++){
+      response = response + "\n" + ticket_array[i];
     }
 
     bot.reply(message, response);
   }
-})
+});
 
 controller.on("message_received", function(bot, message){
   if(message.subtitle != undefined){
