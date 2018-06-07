@@ -54,7 +54,7 @@ controller.on('rtm_close', function (bot) {
 
  // When Miss Thang joins the channel #standup
 controller.on('bot_channel_join', function (bot, message) {
-    bot.reply(message, "What's up office fam? I'm here to monitor the standups. If I find anyone playing hookey, I'll attack you like I attack Dikey!")
+    bot.reply(message, "What's up office fam? Bet you're surprised to see me here. I'm the new standup queen and will be taking it over from here @StandupJack.")
 });
 
 // Stop trying to talk to her!
@@ -62,77 +62,30 @@ controller.hears(['hello','Tuna'],'direct_message', function(bot,message) {
     bot.reply(message, 'Bork!');
 });
 
-// Getting to the good stuff
-controller.hears('interactive', 'direct_message', function(bot, message) {
+controller.hears('pizzatime', 'direct_message', function(bot,message) {
+    askYesterday = function(response, convo) {
+      convo.ask('What did you accomplish yesterday?', function(response, convo) {
+        convo.say('Cool.');
+        askToday(response, convo);
+        convo.next();
+      });
+    }
+    askToday = function(response, convo) {
+      convo.ask('What are you working on today?', function(response, convo) {
+        convo.say('Sounds good.')
+        askWhen(response, convo);
+        convo.next();
+      });
+    }
+    askWhen = function(response, convo) {
+      convo.ask('When will you be done? Any blockers?', function(response, convo) {
+        convo.say('Alright, peace out.');
+        convo.next();
+      });
+    }
 
-    bot.reply(message, {
-        attachments:[
-            {
-                title: 'Do you want to interact with my buttons?',
-                callback_id: '123',
-                attachment_type: 'default',
-                actions: [
-                    {
-                        "name":"yes",
-                        "text": "Yes",
-                        "value": "yes",
-                        "type": "button",
-                    },
-                    {
-                        "name":"no",
-                        "text": "No",
-                        "value": "no",
-                        "type": "button",
-                    }
-                ]
-            }
-        ]
-    });
+    bot.startConversation(message, askYesterday);
 });
-
-controller.hears(['question me'], 'message_received', function(bot,message) {
-
-  // start a conversation to handle this response.
-  bot.startConversation(message,function(err,convo) {
-
-    convo.addQuestion('Shall we proceed Say YES, NO or DONE to quit.',[
-      {
-        pattern: 'done',
-        callback: function(response,convo) {
-          convo.say('OK you are done!');
-          convo.next();
-        }
-      },
-      {
-        pattern: bot.utterances.yes,
-        callback: function(response,convo) {
-          convo.say('Great! I will continue...');
-          // do something else...
-          convo.next();
-
-        }
-      },
-      {
-        pattern: bot.utterances.no,
-        callback: function(response,convo) {
-          convo.say('Perhaps later.');
-          // do something else...
-          convo.next();
-        }
-      },
-      {
-        default: true,
-        callback: function(response,convo) {
-          // just repeat the question
-          convo.repeat();
-          convo.next();
-        }
-      }
-    ],{},'default');
-
-  })
-
-})
 
 /**
  * AN example of what could be:
