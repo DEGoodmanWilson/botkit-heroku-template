@@ -1,4 +1,3 @@
-const keys = require('./config/keys');
 const messages = require('./config/messages');
 const options = require('./config/requestOptions');
 const request = require('request');
