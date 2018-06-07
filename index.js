@@ -1,30 +1,15 @@
-/**
- * A Bot for Slack!
- */
-
-
-/**
- * Define a function for initiating a conversation on installation
- * With custom integrations, we don't have a way to find out who installed us, so we can't message them :(
- */
-
 function onInstallation(bot, installer) {
     if (installer) {
         bot.startPrivateConversation({user: installer}, function (err, convo) {
             if (err) {
                 console.log(err);
             } else {
-                convo.say('I am a bot that has just joined your team');
+                convo.say('I am a Tuna bot that has just joined your team');
                 convo.say('You must now /invite me to a channel so that I can be of use!');
             }
         });
     }
 }
-
-
-/**
- * Configure the persistence options
- */
 
 var config = {};
 if (process.env.MONGOLAB_URI) {
@@ -37,10 +22,6 @@ if (process.env.MONGOLAB_URI) {
         json_file_store: ((process.env.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
     };
 }
-
-/**
- * Are being run as an app or a custom integration? The initialization will differ, depending
- */
 
 if (process.env.TOKEN || process.env.SLACK_TOKEN) {
     //Treat this as a custom integration
@@ -56,15 +37,6 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
     process.exit(1);
 }
 
-
-/**
- * A demonstration for how to handle websocket events. In this case, just log when we have and have not
- * been disconnected from the websocket. In the future, it would be super awesome to be able to specify
- * a reconnect policy, and do reconnections automatically. In the meantime, we aren't going to attempt reconnects,
- * WHICH IS A B0RKED WAY TO HANDLE BEING DISCONNECTED. So we need to fix this.
- *
- * TODO: fixed b0rked reconnect behavior
- */
 // Handle events related to the websocket connection to Slack
 controller.on('rtm_open', function (bot) {
     console.log('** The RTM api just connected!');
@@ -77,18 +49,43 @@ controller.on('rtm_close', function (bot) {
 
 
 /**
- * Core bot logic goes here!
+ * Core bot logic!
  */
-// BEGIN EDITING HERE!
 
+ // When Miss Thang joins the channel #standup
 controller.on('bot_channel_join', function (bot, message) {
-    bot.reply(message, "I'm here!")
+    bot.reply(message, "What's up office fam? Bet you're surprised to see me here. I'm the new standup queen and will be taking it over from here @StandupJack.")
 });
 
-controller.hears('hello', 'direct_message', function (bot, message) {
-    bot.reply(message, 'Hello!');
+// Stop trying to talk to her!
+controller.hears(['hello','Tuna'],'direct_message', function(bot,message) {
+    bot.reply(message, 'Bork!');
 });
 
+controller.hears('pizzatime', 'direct_message', function(bot,message) {
+    askYesterday = function(response, convo) {
+      convo.ask('What did you accomplish yesterday?', function(response, convo) {
+        convo.say('Cool.');
+        askToday(response, convo);
+        convo.next();
+      });
+    }
+    askToday = function(response, convo) {
+      convo.ask('What are you working on today?', function(response, convo) {
+        convo.say('Sounds good.')
+        askWhen(response, convo);
+        convo.next();
+      });
+    }
+    askWhen = function(response, convo) {
+      convo.ask('When will you be done? Any blockers?', function(response, convo) {
+        convo.say('Alright, peace out.');
+        convo.next();
+      });
+    }
+
+    bot.startConversation(message, askYesterday);
+});
 
 /**
  * AN example of what could be:
