@@ -279,4 +279,41 @@ controller.on("set reminder", function(bot, ticket, time_number, time_unit){
 // Stops the reminders for a specified ticket
 controller.hears("stop reminders", ['direct_mention', 'direct_message'], function(bot, message){
   message_text = message.split(' ');
+
+  if(message_text.length != 3){
+    bot.reply(message, "It looks like you want to stop reminders for a ticket. The correct format is *stop reminders <ticket number>*");
+    return;
+  }
+
+  ticket = ticket_list[message_text[2]];
+
+  if(ticket == undefined){
+    bot.reply("Invalid ticket number");
+    return;
+  }
+
+  clearInterval(ticket.interval_id);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

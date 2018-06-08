@@ -21,7 +21,7 @@ module.exports = {
     uri: "https://slack.com/api/users.list",
     json: true,
     qs: {
-      token: process.env.SLACK_TOKEN
+      token: process.env.SLACK_API_TOKEN
     }
   },
 
