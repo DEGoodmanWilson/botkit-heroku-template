@@ -1,32 +1,39 @@
 {
-  "name": "easy-peasy-bot",
-  "version": "1.0.0",
-  "description": "The awesomest bot evar.",
-  "main": "index.js",
+  "name": "botkit-starter-slack",
+  "version": "0.0.2",
+  "description": "A starter kit for building a custom Slack bot with Botkit Studio",
+  "main": "bot.js",
   "scripts": {
-    "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
-  },
-  "keywords": [
-    "slack",
-    "bot"
-  ],
-  "author": "D.E. Goodman-Wilson",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
-  },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
-  "engines": {
-    "node": "5.1.1"
+    "start": "node bot.js"
   },
   "dependencies": {
-    "botkit": "0.2.2",
-    "botkit-storage-mongo": "^1.0.2",
-    "mongodb": "^1.4.39"
-  }
+    "body-parser": "^1.15.2",
+    "botkit": "^0.6.12",
+    "botkit-storage-mongo": "^1.0.6",
+    "botkit-studio-metrics": "^0.0.2",
+    "cookie-parser": "^1.4.3",
+    "debug": "^2.3.3",
+    "express": "^4.14.0",
+    "express-hbs": "^1.0.4",
+    "node-env-file": "^0.1.8",
+    "querystring": "^0.2.0",
+    "request": "^2.79.0",
+    "wordfilter": "^0.2.6"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/howdyai/botkit-starter-slack.git"
+  },
+  "bugs": {
+    "url": "https://github.com/howdyai/botkit-starter-slack/issues"
+  },
+  "homepage": "https://github.com/howdyai/botkit-starter-slack",
+  "keywords": [
+    "bots",
+    "chatbots",
+    "slack"
+  ],
+  "author": "ben@howdy.ai",
+  "license": "ISC"
 }
