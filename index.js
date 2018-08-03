@@ -5,7 +5,6 @@ const rp = require('request-promise');
 const Ticket = require('./models/Ticket');
 var ticket_list = {};
 var user_list = {};
-var user_id_on_call = undefined;
 
 /**
  * Define a function for initiating a conversation on installation
@@ -16,6 +15,7 @@ function onInstallation(bot, installer) {
   if (installer) {
     bot.startPrivateConversation({user: installer}, function (err, convo) {
       if (err) {
+        console.log("=== PRIVATE CONVERSATION ERROR ON INSTALLATION ===");
         console.log(err);
       } else {
         convo.say("I'm the P0 bot! I'm here to automatically notify the on call developer of any new P0s and send reminders to update the ticket until resolved.");
@@ -26,7 +26,6 @@ function onInstallation(bot, installer) {
 
   ticket_list = {};
   user_list = {};
-  user_id_on_call = undefined;
 }
 
 /**
@@ -77,6 +76,11 @@ controller.on('bot_channel_join', function (bot, message) {
 controller.on("escalate", function(bot, ticket_number){
   ticket = ticket_list[ticket_number];
 
+  if(ticket == undefined){
+    console.log("Ticket does not exist to escalate");
+    return;
+  }
+
   if(ticket.escalation_level == 3){
     console.log("Already at the highest escalation level");
     return;
@@ -91,6 +95,7 @@ controller.on("escalate", function(bot, ticket_number){
 
     bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
       if(err){
+        console.log("=== PRIVATE CONVERSATION ERROR ON ESCALATION ===");
         console.log(err);
       }
 
@@ -141,25 +146,25 @@ controller.hears("tickets", ["direct_mention", "direct_message"], function(bot, 
 });
 
 controller.on("message_received", function(bot, message){
-  if(message.subtitle != undefined){
-    var subtitle = message.subtitle.split(' ');
-    if(subtitle[0] == "PagerDuty"){
-      console.log(message);
-      var content = message.content.split(' ');
-      if(content[0] == "Triggered"){
-        var ticket_number = content[1].replace(":", "");
-        controller.trigger("p0 open", [bot, ticket_number]);
-      }
-      
-      else if(content[0] == "Escalated"){
-        var ticket_number = content[1].replace(":", "");
-        controller.trigger("escalate", [bot, ticket_number]);
-      }
+  if(message.subtitle == undefined || message.content == undefined)
+    return;
 
-      else if(content[0] == "Resolved"){
-        var ticket_number = content[1].replace(":", "");
-        controller.trigger("p0 close", [bot, ticket_number]);
-      }
+  var subtitle = message.subtitle.split(' ');
+  if(subtitle[0] == "PagerDuty"){
+    var content = message.content.split(' ');
+    if(content[0] == "Triggered"){
+      var ticket_number = content[1].replace(":", "");
+      controller.trigger("p0 open", [bot, ticket_number]);
+    }
+    
+    else if(content[0] == "Escalated"){
+      var ticket_number = content[1].replace(":", "");
+      controller.trigger("escalate", [bot, ticket_number]);
+    }
+
+    else if(content[0] == "Resolved"){
+      var ticket_number = content[1].replace(":", "");
+      controller.trigger("p0 close", [bot, ticket_number]);
     }
   }
 });
@@ -167,10 +172,17 @@ controller.on("message_received", function(bot, message){
 // Closes a ticket
 controller.on("p0 close", function(bot, ticket_number){
   var temp = ticket_list[ticket_number];
+
+  if(temp == undefined){
+    console.log("Attempted to close a ticket that I am not tracking");
+    return;
+  }
+
   clearInterval(temp.interval_id);
 
   bot.startPrivateConversation({user: temp.user_id}, function(err, convo){
     if(err){
+      console.log("=== PRIVATE CONVERSATION ERROR ON TICKET CLOSE ===");
       console.log(err);
     }
 
@@ -201,9 +213,10 @@ controller.on("p0 open", function(bot, ticket_number){
       body = body.oncalls;
 
       var user_name = body[2].user.summary;
-      user_id_on_call = user_list[user_name];
+      var user_id_on_call = user_list[user_name];
       bot.startPrivateConversation({user: user_id_on_call}, function(err, convo){
         if(err){
+          console.log("=== PRIVATE CONVERSATION ERROR ON TICKET OPEN ===");
           console.log(err);
         }
 
@@ -232,10 +245,27 @@ controller.hears("p0 time", ['direct_mention', 'direct_message'], function(bot, 
   var ticket_number = message_text[2];
   var time_number = parseInt(message_text[3]);
   var time_unit = message_text[4];
+  var valid_time_units = ["minutes", "minute", "hours", "hour"];
 
-  if(time_number == NaN){
-    bot.reply(message, "Please enter a real number for the time");
+  if(time_number == NaN || parseInt < 1){
+    bot.reply(message, "Please enter a positive and real number for the time");
     return;
+  }
+
+  if(!valid_time_units.includes(time_unit)){
+    bot.reply(message, "Please enter a valid time unit. The valid units are minutes or hours");
+    return;
+  }
+
+  if(time_unit == "minute" || time_unit == "minutes"){
+    if(time_number > 1440)
+      bot.reply(message, "Number is too high. Notification reminders can't be longer than 1 day");
+  }
+
+  if(time_unit == "hour" || time_unit == "hours"){
+    if(time_number > 24){
+      bot.reply(message, "Number is too high. Notification reminders can't be longer than 1 day");   
+    }
   }
 
   var temp = ticket_list[ticket_number];
@@ -244,17 +274,20 @@ controller.hears("p0 time", ['direct_mention', 'direct_message'], function(bot, 
     bot.reply(message, "The ticket number you entered is invalid.");
     return;
   }
+  
+  console.log("======= MADE IT TO THE SET REMINDER CALL ========")
 
   controller.trigger("set reminder", [bot, temp, time_number, time_unit]);
 
   bot.reply(message, "The time intervals for updates on ticket " + ticket_number + " has been changed to " + time_number + " " + time_unit);
 
-  bot.startPrivateConversation({user: user_id_on_call}, function(err, convo){
+  bot.startPrivateConversation({user: temp.user_id}, function(err, convo){
     if(err){
+      console.log("=== PRIVATE CONVERSATION ERROR ON CHANGE REMINDER TIME ===");
       console.log(err);
     }
 
-    convo.say("The reminder interval was updated to" + time_number + " " + time_unit + " for ticket number " + ticket_number + " so you may need to update the ticket.")
+    convo.say("The reminder interval was updated to " + time_number + " " + time_unit + " for ticket number " + ticket_number + " so you may need to update the ticket.")
   });
 });
 
@@ -268,6 +301,7 @@ controller.on("set reminder", function(bot, ticket, time_number, time_unit){
   ticket.interval_id = setInterval(function(){
     bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
       if(err){
+        console.log("=== PRIVATE CONVERSATION ERROR ON SET REMINDER ===");
         console.log(err);
       }
 
@@ -278,22 +312,64 @@ controller.on("set reminder", function(bot, ticket, time_number, time_unit){
 
 // Stops the reminders for a specified ticket
 controller.hears("stop reminders", ['direct_mention', 'direct_message'], function(bot, message){
-  message_text = message.split(' ');
+  message_text = message.text.split(' ');
 
   if(message_text.length != 3){
     bot.reply(message, "It looks like you want to stop reminders for a ticket. The correct format is *stop reminders <ticket number>*");
     return;
   }
 
-  ticket = ticket_list[message_text[2]];
+  var ticket = ticket_list[message_text[2]];
 
   if(ticket == undefined){
-    bot.reply("Invalid ticket number");
+    bot.reply(message, "Invalid ticket number");
     return;
   }
 
   clearInterval(ticket.interval_id);
 });
+
+controller.hears("arrest", ["direct_mention"], function(bot, message){
+  var message_text = message.text.split("@");
+
+  if(message_text.length != 2){
+    return;
+  }
+
+  user = message_text[1].replace(">", "");
+
+  var kick_url = options.kick;
+  kick_url.qs["channel"] = message.channel;
+  kick_url.qs["user"] = user;
+  
+  var invite_url = options.invite;
+  invite_url["user"] = user;
+
+  rp(kick_url).then(function(body){
+    bot.reply(message, ":holdup: The perp has been apprehended and taken into custody :holdup:")
+    request(invite_url, (err, res, body) => {
+      if(err){
+        console.log("Couldn't add to jail");
+      }
+    });
+  });
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -17,6 +17,24 @@ module.exports = {
     }
   },
 
+  invite: {
+    url: "https://slack.com/api/groups.invite",
+    json: true,
+    qs: {
+      method: "POST",
+      token: process.env.SLACK_API_TOKEN,
+      channel: "GC3CCDP1D"
+    }
+  },
+
+  kick: {
+    url: "https://slack.com/api/channels.kick",
+    json: true,
+    qs: {
+      token: process.env.SLACK_API_TOKEN
+    }
+  },
+
   slack_users: {
     uri: "https://slack.com/api/users.list",
     json: true,
@@ -24,21 +42,12 @@ module.exports = {
       token: process.env.SLACK_API_TOKEN
     }
   },
-
-  p_zero_check: {
-    url: 'https://api.pagerduty.com/incidents',
+  
+  user_info: {
+    uri: "https://slack.com/api/users.info",
     json: true,
     qs: {
-      since: '',
-      until: '',
-      'team_ids%5B%5D': 'PT10OFI',
-      'statuses%5B%5D': 'triggered',
-      'statuses%5B%5D': 'acknowledged',
-      'urgencies%5B%5D': 'high',
-      time_zone: 'UTC'
-    },
-    headers: {
-      Authorization: process.env.PAGER_DUTY_TOKEN
+      token: process.env.SLACK_API_TOKEN
     }
   }
 }
