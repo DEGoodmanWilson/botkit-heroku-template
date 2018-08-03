@@ -1,7 +1,10 @@
-/**
- * A Bot for Slack!
- */
-
+const messages = require('./config/messages');
+const options = require('./config/requestOptions');
+const request = require('request');
+const rp = require('request-promise');
+const Ticket = require('./models/Ticket');
+var ticket_list = {};
+var user_list = {};
 
 /**
  * Define a function for initiating a conversation on installation
@@ -9,18 +12,21 @@
  */
 
 function onInstallation(bot, installer) {
-    if (installer) {
-        bot.startPrivateConversation({user: installer}, function (err, convo) {
-            if (err) {
-                console.log(err);
-            } else {
-                convo.say('I am a bot that has just joined your team');
-                convo.say('You must now /invite me to a channel so that I can be of use!');
-            }
-        });
-    }
-}
+  if (installer) {
+    bot.startPrivateConversation({user: installer}, function (err, convo) {
+      if (err) {
+        console.log("=== PRIVATE CONVERSATION ERROR ON INSTALLATION ===");
+        console.log(err);
+      } else {
+        convo.say("I'm the P0 bot! I'm here to automatically notify the on call developer of any new P0s and send reminders to update the ticket until resolved.");
+        convo.say("Most of my functions will handle automatically, however some commands rely on human interaction so /invite me to a channel to use them!");
+      }
+    });
+  }
 
+  ticket_list = {};
+  user_list = {};
+}
 
 /**
  * Configure the persistence options
@@ -28,14 +34,14 @@ function onInstallation(bot, installer) {
 
 var config = {};
 if (process.env.MONGOLAB_URI) {
-    var BotkitStorage = require('botkit-storage-mongo');
-    config = {
-        storage: BotkitStorage({mongoUri: process.env.MONGOLAB_URI}),
-    };
+  var BotkitStorage = require('botkit-storage-mongo');
+  config = {
+    storage: BotkitStorage({mongoUri: process.env.MONGOLAB_URI}),
+  };
 } else {
-    config = {
-        json_file_store: ((process.env.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
-    };
+  config = {
+    json_file_store: ((process.env.TOKEN)?'./db_slack_bot_ci/':'./db_slack_bot_a/'), //use a different name if an app or CI
+  };
 }
 
 /**
@@ -43,38 +49,19 @@ if (process.env.MONGOLAB_URI) {
  */
 
 if (process.env.TOKEN || process.env.SLACK_TOKEN) {
-    //Treat this as a custom integration
-    var customIntegration = require('./lib/custom_integrations');
-    var token = (process.env.TOKEN) ? process.env.TOKEN : process.env.SLACK_TOKEN;
-    var controller = customIntegration.configure(token, config, onInstallation);
+  //Treat this as a custom integration
+  var customIntegration = require('./lib/custom_integrations');
+  var token = (process.env.TOKEN) ? process.env.TOKEN : process.env.SLACK_TOKEN;
+  var controller = customIntegration.configure(token, config, onInstallation);
 } else if (process.env.CLIENT_ID && process.env.CLIENT_SECRET && process.env.PORT) {
-    //Treat this as an app
-    var app = require('./lib/apps');
-    var controller = app.configure(process.env.PORT, process.env.CLIENT_ID, process.env.CLIENT_SECRET, config, onInstallation);
+  //Treat this as an app
+  var app = require('./lib/apps');
+  var controller = app.configure(process.env.PORT, process.env.CLIENT_ID, process.env.CLIENT_SECRET, config, onInstallation);
 } else {
-    console.log('Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment');
-    process.exit(1);
+  console.log('Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app,'
+    + ' please specify CLIENTID, CLIENTSECRET, and PORT in the environment');
+  process.exit(1);
 }
-
-
-/**
- * A demonstration for how to handle websocket events. In this case, just log when we have and have not
- * been disconnected from the websocket. In the future, it would be super awesome to be able to specify
- * a reconnect policy, and do reconnections automatically. In the meantime, we aren't going to attempt reconnects,
- * WHICH IS A B0RKED WAY TO HANDLE BEING DISCONNECTED. So we need to fix this.
- *
- * TODO: fixed b0rked reconnect behavior
- */
-// Handle events related to the websocket connection to Slack
-controller.on('rtm_open', function (bot) {
-    console.log('** The RTM api just connected!');
-});
-
-controller.on('rtm_close', function (bot) {
-    console.log('** The RTM api just closed');
-    // you may want to attempt to re-open
-});
-
 
 /**
  * Core bot logic goes here!
@@ -82,27 +69,327 @@ controller.on('rtm_close', function (bot) {
 // BEGIN EDITING HERE!
 
 controller.on('bot_channel_join', function (bot, message) {
-    bot.reply(message, "I'm here!")
+  bot.reply(message, "This is the P0lice! Put your hands where I can see them! :male-police-officer: :rotating_light: :female-police-officer:");
 });
 
-controller.hears('hello', 'direct_message', function (bot, message) {
-    bot.reply(message, 'Hello!');
+// Escalates a specified ticket up one level if possible
+controller.on("escalate", function(bot, ticket_number){
+  ticket = ticket_list[ticket_number];
+
+  if(ticket == undefined){
+    console.log("Ticket does not exist to escalate");
+    return;
+  }
+
+  if(ticket.escalation_level == 3){
+    console.log("Already at the highest escalation level");
+    return;
+  }
+
+  escalation_level++;
+
+  request(options.escalation, (err, res, body) => {
+    var newOnCall = body[3 - escalation_level].user.summary; 
+
+    ticket.user_id = user_list[newOnCall];
+
+    bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
+      if(err){
+        console.log("=== PRIVATE CONVERSATION ERROR ON ESCALATION ===");
+        console.log(err);
+      }
+
+      convo.say("Ticket number " + ticket.number + " has been escalated and you are the next developer on call!");
+    });
+  })
+});
+
+// Lists the devs escalation levels
+controller.hears('escalation', ['direct_mention', 'direct_message'], function(bot, message){
+  request(options.escalation, (err, res, body) => {
+    body = body.oncalls;
+  
+    var escalation1 = body[2].user.summary;
+    var escalation2 = body[1].user.summary;
+    var escalation3 = body[0].user.summary;
+
+    bot.reply(message, "*Escalation 1*: " + escalation1 + "\n*Escalation 2*: " + escalation2 + "\n*Escalation 3*: " + escalation3);
+  })
+});
+
+// Provides a list of commands the bot can handle
+controller.hears("help", ["direct_mention", "direct_message"], function(bot, message){
+  bot.reply(message, "*escalation* - Print the list of users on escalation");
+  bot.reply(message, "*help* - Show this list of commands\n");
+  bot.reply(message, "*p0 time <ticket number> <time number> <time unit>* - Change the reminder intervals for the specified ticket to the specified time"); 
+  bot.reply(message, "*tickets* - List all the currently open tickets");
+  bot.reply(message, "*stop reminders <ticket number>* - Stop receiving reminders for the specified ticket"); 
+});
+
+controller.hears(["hi", "hello", "howdy", "whats up", "what's up", "hey", "aloha"], ["direct_mention", "direct_message"], function(bot, message){
+  bot.reply(message, ":holdup: hello civilian :holdup:");
+});
+
+controller.hears("tickets", ["direct_mention", "direct_message"], function(bot, message){
+  ticket_array = Object.keys(ticket_list);
+
+  if(ticket_array.length == 0){
+    bot.reply(message, "There are currently no open tickets that I'm aware of");
+  } else {
+    var response = ticket_array[0];
+    for(var i = 1; i < ticket_array.length; i++){
+      response = response + "\n" + ticket_array[i];
+    }
+
+    bot.reply(message, response);
+  }
+});
+
+controller.on("message_received", function(bot, message){
+  if(message.subtitle == undefined || message.content == undefined)
+    return;
+
+  var subtitle = message.subtitle.split(' ');
+  if(subtitle[0] == "PagerDuty"){
+    var content = message.content.split(' ');
+    if(content[0] == "Triggered"){
+      var ticket_number = content[1].replace(":", "");
+      controller.trigger("p0 open", [bot, ticket_number]);
+    }
+    
+    else if(content[0] == "Escalated"){
+      var ticket_number = content[1].replace(":", "");
+      controller.trigger("escalate", [bot, ticket_number]);
+    }
+
+    else if(content[0] == "Resolved"){
+      var ticket_number = content[1].replace(":", "");
+      controller.trigger("p0 close", [bot, ticket_number]);
+    }
+  }
+});
+
+// Closes a ticket
+controller.on("p0 close", function(bot, ticket_number){
+  var temp = ticket_list[ticket_number];
+
+  if(temp == undefined){
+    console.log("Attempted to close a ticket that I am not tracking");
+    return;
+  }
+
+  clearInterval(temp.interval_id);
+
+  bot.startPrivateConversation({user: temp.user_id}, function(err, convo){
+    if(err){
+      console.log("=== PRIVATE CONVERSATION ERROR ON TICKET CLOSE ===");
+      console.log(err);
+    }
+
+    dm = messages.close[Math.floor(Math.random() * 4) + 1];
+
+    convo.say(dm);
+    convo.say("P0 Ticket Number " + ticket_number + " has been resolved! I will quit pestering you about updating trusts now :)")
+  });
+
+  delete ticket_list[ticket_number];
+});
+
+// Opens a new ticket
+controller.on("p0 open", function(bot, ticket_number){
+  rp(options.slack_users).then(function(slack_users){
+    var users = slack_users.members;
+    user_list = {};
+
+    for(var i = 0; i < users.length; i++){
+      user_list[users[i].real_name] = users[i].id;
+    }
+
+    request(options.on_call, (err, res, body) => {
+      if (err){
+        return console.log(err);
+      }
+
+      body = body.oncalls;
+
+      var user_name = body[2].user.summary;
+      var user_id_on_call = user_list[user_name];
+      bot.startPrivateConversation({user: user_id_on_call}, function(err, convo){
+        if(err){
+          console.log("=== PRIVATE CONVERSATION ERROR ON TICKET OPEN ===");
+          console.log(err);
+        }
+
+        dm = messages.open[Math.floor(Math.random() * 4) + 1];
+      
+        convo.say(dm);
+        convo.say("P0 Ticket Number " + ticket_number + " has been opened! You will be sent reminders to update trusts every hour or a custom time interval if you specify otherwise")
+      });
+
+       ticket_list[ticket_number] = new Ticket(ticket_number, user_id_on_call);
+
+       controller.trigger("set reminder", [bot, ticket_list[ticket_number], 1, 'hour'])
+    });
+  });
+});
+
+// Changes the reminder intervals for a ticket to the specified time
+controller.hears("p0 time", ['direct_mention', 'direct_message'], function(bot, message){
+  message_text = message.text.split(' ');
+
+  if(message_text.length != 5){
+    bot.reply(message, "It looks like you entered the wrong format. It should be 'p0 time <ticket number> <time_number> <time_unit> where time unit is either in minutes or hours'");
+    return;
+  }
+
+  var ticket_number = message_text[2];
+  var time_number = parseInt(message_text[3]);
+  var time_unit = message_text[4];
+  var valid_time_units = ["minutes", "minute", "hours", "hour"];
+
+  if(time_number == NaN || parseInt < 1){
+    bot.reply(message, "Please enter a positive and real number for the time");
+    return;
+  }
+
+  if(!valid_time_units.includes(time_unit)){
+    bot.reply(message, "Please enter a valid time unit. The valid units are minutes or hours");
+    return;
+  }
+
+  if(time_unit == "minute" || time_unit == "minutes"){
+    if(time_number > 1440)
+      bot.reply(message, "Number is too high. Notification reminders can't be longer than 1 day");
+  }
+
+  if(time_unit == "hour" || time_unit == "hours"){
+    if(time_number > 24){
+      bot.reply(message, "Number is too high. Notification reminders can't be longer than 1 day");   
+    }
+  }
+
+  var temp = ticket_list[ticket_number];
+
+  if(temp == undefined){
+    bot.reply(message, "The ticket number you entered is invalid.");
+    return;
+  }
+  
+  console.log("======= MADE IT TO THE SET REMINDER CALL ========")
+
+  controller.trigger("set reminder", [bot, temp, time_number, time_unit]);
+
+  bot.reply(message, "The time intervals for updates on ticket " + ticket_number + " has been changed to " + time_number + " " + time_unit);
+
+  bot.startPrivateConversation({user: temp.user_id}, function(err, convo){
+    if(err){
+      console.log("=== PRIVATE CONVERSATION ERROR ON CHANGE REMINDER TIME ===");
+      console.log(err);
+    }
+
+    convo.say("The reminder interval was updated to " + time_number + " " + time_unit + " for ticket number " + ticket_number + " so you may need to update the ticket.")
+  });
+});
+
+// Called by p0 time and p0 open to change the reminder intervals
+controller.on("set reminder", function(bot, ticket, time_number, time_unit){
+  if(ticket.interval_id != -1)
+    clearInterval(ticket.interval_id);
+
+  var time = (time_unit == 'minute' || time_unit == 'minutes') ? 1000*60*time_number : 1000*60*60*time_number;
+
+  ticket.interval_id = setInterval(function(){
+    bot.startPrivateConversation({user: ticket.user_id}, function(err, convo){
+      if(err){
+        console.log("=== PRIVATE CONVERSATION ERROR ON SET REMINDER ===");
+        console.log(err);
+      }
+
+      convo.say("This is a reminder to update ticket number " + ticket.number);
+    })
+  }, time);
+})
+
+// Stops the reminders for a specified ticket
+controller.hears("stop reminders", ['direct_mention', 'direct_message'], function(bot, message){
+  message_text = message.text.split(' ');
+
+  if(message_text.length != 3){
+    bot.reply(message, "It looks like you want to stop reminders for a ticket. The correct format is *stop reminders <ticket number>*");
+    return;
+  }
+
+  var ticket = ticket_list[message_text[2]];
+
+  if(ticket == undefined){
+    bot.reply(message, "Invalid ticket number");
+    return;
+  }
+
+  clearInterval(ticket.interval_id);
+});
+
+controller.hears("arrest", ["direct_mention"], function(bot, message){
+  var message_text = message.text.split("@");
+
+  if(message_text.length != 2){
+    return;
+  }
+
+  user = message_text[1].replace(">", "");
+
+  var kick_url = options.kick;
+  kick_url.qs["channel"] = message.channel;
+  kick_url.qs["user"] = user;
+  
+  var invite_url = options.invite;
+  invite_url["user"] = user;
+
+  rp(kick_url).then(function(body){
+    bot.reply(message, ":holdup: The perp has been apprehended and taken into custody :holdup:")
+    request(invite_url, (err, res, body) => {
+      if(err){
+        console.log("Couldn't add to jail");
+      }
+    });
+  });
+
 });
 
 
-/**
- * AN example of what could be:
- * Any un-handled direct mention gets a reaction and a pat response!
- */
-//controller.on('direct_message,mention,direct_mention', function (bot, message) {
-//    bot.api.reactions.add({
-//        timestamp: message.ts,
-//        channel: message.channel,
-//        name: 'robot_face',
-//    }, function (err) {
-//        if (err) {
-//            console.log(err)
-//        }
-//        bot.reply(message, 'I heard you loud and clear boss.');
-//    });
-//});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

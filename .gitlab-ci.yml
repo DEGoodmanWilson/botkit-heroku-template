@@ -1,0 +1,20 @@
+########### START Common CI ###########
+image: ruby:2.3.1
+stages:
+ - setup
+ - test
+ - deploy
+########### END Stage Testing ###########
+
+########### START staging-deploy-us-west-2 ###########
+staging-us-deploy:
+  stage: deploy
+  environment:
+    name: Staging US
+    url: https://pager-duty-slackbot-staging.apps.zuora.com
+  script:
+    - gem install dpl
+    - dpl --provider=deis --controller=https://deis.apps.zuora.com --username=$DEIS_USERNAME_US_STAGING --password=$DEIS_PASSWORD_US_STAGING --app=pager-duty-slackbot-staging --cli-version=v2.13.0
+  only:
+    - staging
+########### END staging-deploy-us-west-2 ###########

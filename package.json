@@ -1,32 +1,34 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "myawesomebot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "A bot that will notify on call developers when P0 tickets open, escalate and resolve and sends reminders on an interval",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "CLIENT_ID=${CLIENT_ID} CLIENT_SECRET=${CLIENT_SECRET} PORT=${PORT} SLACK_TOKEN=${SLACK_TOKEN} PAGER_DUTY_TOKEN=${PAGER_DUTY_TOKEN} node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "git+https://github.com/henryjetmundsen/easy-peasy-bot-app.git"
   },
   "keywords": [
     "slack",
     "bot"
   ],
-  "author": "D.E. Goodman-Wilson",
+  "author": "Henry Jetmundsen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
+    "url": "https://github.com/henryjetmundsen/easy-peasy-bot-app/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
+  "homepage": "https://github.com/henryjetmundsen/easy-peasy-bot-app#readme",
   "engines": {
     "node": "5.1.1"
   },
   "dependencies": {
     "botkit": "0.2.2",
     "botkit-storage-mongo": "^1.0.2",
-    "mongodb": "^1.4.39"
+    "mongodb": "^1.4.39",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2"
   }
 }
