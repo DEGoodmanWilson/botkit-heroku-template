@@ -1,7 +1,7 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "aftership-bot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "Slack bot for adding packages to an aftership account.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,23 +9,36 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "git+https://github.com/jfisher446/aftership-bot.git"
   },
   "keywords": [
     "slack",
-    "bot"
+    "bot",
+    "package",
+    "tracking",
+    "aftership",
+    "after",
+    "ship",
+    "UPS",
+    "Fedex",
+    "USPS",
+    "shipment",
+    "shipping",
+    "tracker", 
+    "courier"
   ],
-  "author": "D.E. Goodman-Wilson",
+  "author": "John Fisher, Fisharply, LLC",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
+    "url": "https://github.com/jfisher446/aftership-bot/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
+  "homepage": "https://github.com/jfisher446/aftership-bot#readme",
   "engines": {
-    "node": "5.1.1"
+    "node": "8.12.0"
   },
   "dependencies": {
-    "botkit": "0.2.2",
+    "aftership": "^5.4.4",
+    "botkit": "^0.6.20",
     "botkit-storage-mongo": "^1.0.2",
     "mongodb": "^1.4.39"
   }
