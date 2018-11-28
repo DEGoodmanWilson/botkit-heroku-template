@@ -1,5 +1,9 @@
 # aftership-bot
 
+Receives input from slack channel(s) by listening for a `!track <TrackingID> <Description>` command. On success, aftership-bot will respond in the channel stating either success or specifying the error details.
+
+There's still tons of room for improvement and expansion, so pull requests are welcomed!
+
 ## The story of the aftership-bot
 
 A (not so) long time ago, a suburbun couple was receiving and sending so many packages for their small business that they wanted a way to track them. They stumbled upon aftership.com, which helped them track all of their packages in one place. What they didn't want was another website to go to and interact with as part of their workflow.
