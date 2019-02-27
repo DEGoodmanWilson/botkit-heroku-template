@@ -53,6 +53,13 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
     var controller = app.configure(process.env.PORT, process.env.CLIENT_ID, process.env.CLIENT_SECRET, config, onInstallation);
 } else {
     console.log('Error: If this is a custom integration, please specify TOKEN or SLACK_TOKEN in the environment. If this is an app, please specify CLIENT_ID, CLIENT_SECRET, and PORT in the environment');
+    console.log('Current ENVs:\n' +
+    '  TOKEN: ' + process.env.TOKEN + '\n' +
+    '  SLACK_TOKEN: ' + process.env.SLACK_TOKEN + '\n' +
+    '  CLIENT_ID: ' + process.env.CLIENT_ID + '\n' +
+    '  CLIENT_SECRET: ' + process.env.CLIENT_SECRET + '\n' +
+    '  PORT: ' + process.env.PORT
+    )
     process.exit(1);
 }
 
