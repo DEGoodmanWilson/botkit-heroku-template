@@ -22,10 +22,10 @@
   },
   "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
   "engines": {
-    "node": "5.1.1"
+    "node": "11.10.0"
   },
   "dependencies": {
-    "botkit": "0.2.2",
+    "botkit": "^0.7.4",
     "botkit-storage-mongo": "^1.0.2",
     "mongodb": "^1.4.39"
   }
