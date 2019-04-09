@@ -1,7 +1,7 @@
 {
-  "name": "test-bot",
+  "name": "you-are-not-alone-bot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "You Are Not Alone",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
