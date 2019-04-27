@@ -11,7 +11,7 @@ Eventually their app was named Slack and their digital user, Slackbot.
 And lo, you can build a Slack Bot, too! With our API and this nifty repository, a bot for your team can be all yours.
 
 # Using Botkit for Custom Bots
-1. Fork this project (test)
+1. Fork this project (test 3)
 2. Open up your favorite terminal app, and clone your new repository to your local computer.
 3. This is a Node.js project, so you’ll need to install the various dependencies by running:
     npm install
