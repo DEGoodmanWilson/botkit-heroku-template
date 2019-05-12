@@ -29,6 +29,7 @@
     "node": "5.1.1"
   },
   "dependencies": {
+    "@google-cloud/datastore": "^3.1.2",
     "botkit": "0.2.2",
     "botkit-storage-mongo": "^1.0.2",
     "dotenv": "^8.0.0",
