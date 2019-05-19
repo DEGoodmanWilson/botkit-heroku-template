@@ -9,9 +9,9 @@ function onInstallation(bot, installer) {
       if (err) {
         console.log(err);
       } else {
-        convo.say("I am a bot that has just joined your team");
+        convo.say('I am a bot that has just joined your team');
         convo.say(
-          "You must now /invite me to a channel so that I can be of use!"
+          'You must now /invite me to a channel so that I can be of use!'
         );
       }
     });
@@ -23,22 +23,22 @@ function onInstallation(bot, installer) {
  */
 
 // Load process.env values from .env file
-require("dotenv").config();
+require('dotenv').config();
 
 var config = {};
 if (process.env.MONGOLAB_URI) {
-  var BotkitStorage = require("botkit-storage-mongo");
+  var BotkitStorage = require('botkit-storage-firestore');
   config = {
     storage: BotkitStorage({
       mongoUri: process.env.MONGOLAB_URI,
-      tables: ["coffee"]
+      tables: ['coffee']
     })
   };
 } else {
   config = {
     json_file_store: process.env.TOKEN
-      ? "./db_slack_bot_ci/"
-      : "./db_slack_bot_a/" //use a different name if an app or CI
+      ? './db_slack_bot_ci/'
+      : './db_slack_bot_a/' //use a different name if an app or CI
   };
 }
 
@@ -48,7 +48,7 @@ if (process.env.MONGOLAB_URI) {
 
 if (process.env.TOKEN || process.env.SLACK_TOKEN) {
   //Treat this as a custom integration
-  var customIntegration = require("./lib/custom_integrations");
+  var customIntegration = require('./lib/custom_integrations');
   var token = process.env.TOKEN ? process.env.TOKEN : process.env.SLACK_TOKEN;
   var controller = customIntegration.configure(token, config, onInstallation);
 } else if (
@@ -57,7 +57,7 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
   process.env.PORT
 ) {
   //Treat this as an app
-  var app = require("./lib/apps");
+  var app = require('./lib/apps');
   var controller = app.configure(
     process.env.PORT,
     process.env.CLIENT_ID,
@@ -67,7 +67,7 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
   );
 } else {
   console.log(
-    "Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment"
+    'Error: If this is a custom integration, please specify TOKEN in the environment. If this is an app, please specify CLIENTID, CLIENTSECRET, and PORT in the environment'
   );
   process.exit(1);
 }
@@ -76,41 +76,36 @@ if (process.env.TOKEN || process.env.SLACK_TOKEN) {
 TODO: Move off RTM
 **/
 
-controller.on("rtm_open", function(bot) {
-  console.log("** The RTM api just connected!");
+controller.on('rtm_open', function(bot) {
+  console.log('** The RTM api just connected!');
 });
 
-controller.on("rtm_close", function(bot) {
-  console.log("** The RTM api just closed");
+controller.on('rtm_close', function(bot) {
+  console.log('** The RTM api just closed');
   // you may want to attempt to re-open
 });
 
-
 // Temporary solution before natural language processing
-const mention = ["direct_mention", "mention", "direct_message"];
+const mention = ['direct_mention', 'mention', 'direct_message'];
 
-controller.on("bot_channel_join", function(bot, message) {
+controller.on('bot_channel_join', function(bot, message) {
   //add a coffee related phrase
-  bot.reply(message, "Its coffee time");
+  bot.reply(message, 'Its coffee time');
 });
 
-controller.hears("hello", mention, (bot, message) => {
-  bot.reply(message, "Hello!");
-});
-
-controller.hears(["add coffee: "], mention, (bot, msg) => {
+controller.hears(['add coffee: '], mention, (bot, msg) => {
   const name = msg.text
-    .substring(msg.text.lastIndexOf("coffee:") + 8, msg.text.lastIndexOf("by"))
+    .substring(msg.text.lastIndexOf('coffee:') + 8, msg.text.lastIndexOf('by'))
     .trim();
   const roaster = msg.text
-    .substring(msg.text.lastIndexOf("by") + 2, msg.text.length)
+    .substring(msg.text.lastIndexOf('by') + 2, msg.text.length)
     .trim();
 
   controller.storage.coffee.save({
-    id: name.concat(roaster.toLowerCase().replace(/ /g,'')),
+    id: name.concat(roaster.toLowerCase().replace(/ /g, '')),
     name,
     roaster,
-    brew: null,
+    brew: new Date(),
     likes: 0,
     dislikes: 0
   });
@@ -121,59 +116,65 @@ controller.hears(["add coffee: "], mention, (bot, msg) => {
     if (err) return console.error(err);
     if (coffee) {
       let coffeeList = `*Here's a list of our coffees:* \n`;
-      coffee.forEach(bean => coffeeList += `\n :coffee: ${bean.name} by ${bean.roaster}`);
+      coffee.forEach(
+        bean => (coffeeList += `\n :coffee: ${bean.name} by ${bean.roaster}`)
+      );
       bot.reply(msg, coffeeList);
     }
   });
 });
 
-controller.hears("menu", mention, (bot, msg) => {
+controller.hears('menu', mention, (bot, msg) => {
   // table look-up all the coffee's brew date is today
 
-  bot.reply(msg, "looking...");
+  bot.reply(msg, 'looking...');
   var start = new Date();
-  start.setHours(0,0,0,0);
+  start.setHours(0, 0, 0, 0);
 
   var end = new Date();
-  end.setHours(23,59,59,999);
+  end.setHours(23, 59, 59, 999);
 
-  controller.storage.coffee.find({brew: {$gte: start, $lt: end}}, (error, coffee) => {
-    if (error) return console.error(error);
-    if (coffee) {
-      coffee.forEach(({ name, roaster, url }) => {
-        const u = url || "http://www.google.com";
+  controller.storage.coffee.find(
+    { brew: { $gte: start, $lt: end } },
+    (error, coffee) => {
+      if (error) return console.error(error);
+      if (coffee.length > 0) {
+        coffee.forEach(({ name, roaster, url }) => {
+          const u = url || 'http://www.google.com';
 
-        bot.reply(msg, {
-          text: `<${u}|${name}> by: *${roaster}*`,
-          attachments: [
-            {
-              fallback: "ranking is down, check back later",
-              color: "#3AA3E3",
-              attachment_type: "default",
-              actions: [
-                {
-                  text: ":thumbsup:",
-                  name: name,
-                  type: "button",
-                  value: true
-                },
-                {
-                  text: ":thumbsdown:",
-                  name: name,
-                  type: "button",
-                  value: false
-                }
-              ]
-            }
-          ]
+          bot.reply(msg, {
+            text: `<${u}|${name}> by: *${roaster}*`,
+            attachments: [
+              {
+                fallback: 'ranking is down, check back later',
+                color: '#3AA3E3',
+                attachment_type: 'default',
+                actions: [
+                  {
+                    text: ':thumbsup:',
+                    name: name,
+                    type: 'button',
+                    value: true
+                  },
+                  {
+                    text: ':thumbsdown:',
+                    name: name,
+                    type: 'button',
+                    value: false
+                  }
+                ]
+              }
+            ]
+          });
         });
-      });
-    } else {
-      bot.reply("sorry bro, try again");
+      } else {
+        return bot.reply(msg, "sorry no coffee's found, brew up and try again");
+      }
     }
-  });
-
+  );
 });
+
+controller.hears('rank', mention, (bot, msg) => {});
 
 /**
  * AN example of what could be:
