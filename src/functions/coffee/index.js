@@ -3,8 +3,8 @@ const Firestore = require('@google-cloud/firestore');
 
 // TODO: environment variables
 
-const PROJECTID = FIREBASE_ID;
-const COLLECTION_NAME = FIREBASE_COLLECTION;
+const PROJECTID = process.env.PROJECTID;
+const COLLECTION_NAME = process.env.COLLECTION;
 const firestore = new Firestore({
   projectId: PROJECTID,
   timestampsInSnapshots: true
