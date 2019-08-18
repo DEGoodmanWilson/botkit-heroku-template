@@ -1,7 +1,7 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "iLeroy",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "The livest bot in Nashville.",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,24 +9,25 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "git+https://github.com/CalvinDaMogul/easy-peasy-bot-app.git"
   },
   "keywords": [
     "slack",
     "bot"
   ],
-  "author": "D.E. Goodman-Wilson",
+  "author": "Calvin J. Foster",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
+    "url": "https://github.com/CalvinDaMogul/easy-peasy-bot-app/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
+  "homepage": "https://github.com/CalvinDaMogul/easy-peasy-bot-app#readme",
   "engines": {
     "node": "5.1.1"
   },
   "dependencies": {
     "botkit": "0.2.2",
     "botkit-storage-mongo": "^1.0.2",
+    "http-server": "^0.11.1",
     "mongodb": "^1.4.39"
   }
 }
