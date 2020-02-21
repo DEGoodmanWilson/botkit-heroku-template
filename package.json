@@ -2,9 +2,10 @@
   "name": "gamer-bot",
   "version": "1.0.0",
   "description": "A papio killer.",
-  "main": "index.js",
+  "main": "/build/index.js",
   "scripts": {
-    "start": "node index.js",
+    "tsc": "tsc",
+    "start": "node build/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -25,10 +26,14 @@
     "node": "10.x"
   },
   "dependencies": {
+    "@types/node": "^13.7.1",
     "axios": "^0.19.0",
     "botkit": "0.2.2",
+    "botkit-storage-mongo": "^1.0.7",
     "dotenv": "^8.2.0",
     "node-cron": "^2.0.3",
-    "redis": "^2.8.0"
+    "nvm": "0.0.4",
+    "redis": "^2.8.0",
+    "typescript": "^3.7.5"
   }
 }

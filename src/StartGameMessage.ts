@@ -1,11 +1,11 @@
-function StartGameMessage(players, playersBlock, playerStats) {
+export function StartGameMessage(players: Array<string>, playersBlock: Array<string>, playerStats: any) {
   const getAddOptions = () => {
     return {
       type: "section",
       block_id: "add_players_multi_select",
       text: {
         type: "mrkdwn",
-        text: "Add Players"
+        text: getStatus(),
       },
       accessory: {
         action_id: "multi_add_players",
@@ -19,6 +19,7 @@ function StartGameMessage(players, playersBlock, playerStats) {
       }
     };
   };
+
   const getStatus = () => {
     const openSpots = 4 - players.length;
     if (openSpots === 0) {
@@ -51,10 +52,20 @@ function StartGameMessage(players, playersBlock, playerStats) {
           text: {
             type: "plain_text",
             emoji: true,
-            text: "Shuffle and Start Game"
+            text: "Start Standard Game"
           },
           style: "primary",
-          value: "start_game"
+          value: "start_game_standard"
+        },
+        {
+          type: "button",
+          text: {
+            type: "plain_text",
+            emoji: true,
+            text: "Start Swippy Swappy"
+          },
+          style: "primary",
+          value: "start_game_swippy"
         },
         {
           type: "button",
@@ -119,10 +130,10 @@ function StartGameMessage(players, playersBlock, playerStats) {
             type: "mrkdwn",
             text: getChallengers()
           },
-          {
-            type: "mrkdwn",
-            text: getStatus()
-          }
+          // {
+          //   type: "mrkdwn",
+          //   text: getStatus()
+          // }
         ]
       },
       getAddOptions(),
@@ -133,4 +144,3 @@ function StartGameMessage(players, playersBlock, playerStats) {
     ]
   };
 }
-module.exports = StartGameMessage;
