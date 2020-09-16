@@ -1,7 +1,7 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "package-notif-slackbot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "The bot that bots",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,18 +9,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "git+https://github.com/PagerDuty/package-notif-slackbot.git"
   },
   "keywords": [
     "slack",
     "bot"
   ],
-  "author": "D.E. Goodman-Wilson",
+  "author": "Bri and Neha",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
+    "url": "https://github.com/PagerDuty/package-notif-slackbot/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
+  "homepage": "https://github.com/PagerDuty/package-notif-slackbot#readme",
   "engines": {
     "node": "5.1.1"
   },
