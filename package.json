@@ -1,7 +1,7 @@
 {
-  "name": "easy-peasy-bot",
+  "name": "you-are-not-alone-bot",
   "version": "1.0.0",
-  "description": "The awesomest bot evar.",
+  "description": "You Are Not Alone",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
@@ -9,18 +9,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/DEGoodmanWilson/easy-peasy-bot-app.git"
+    "url": "git+https://github.com/EthanBehrends/easy-peasy-bot-app.git"
   },
   "keywords": [
     "slack",
     "bot"
   ],
-  "author": "D.E. Goodman-Wilson",
+  "author": "Ethan Behrends",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app/issues"
+    "url": "https://github.com/EthanBehrends/easy-peasy-bot-app/issues"
   },
-  "homepage": "https://github.com/DEGoodmanWilson/easy-peasy-bot-app#readme",
+  "homepage": "https://github.com/EthanBehrends/easy-peasy-bot-app#readme",
   "engines": {
     "node": "5.1.1"
   },
